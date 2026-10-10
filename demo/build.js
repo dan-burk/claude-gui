@@ -198,7 +198,7 @@ async function main() {
     // the installed app never loads them.
     const page = html.replace(head, [
       '<title>Claude GUI demo</title>',
-      '  <meta name="description" content="Live demo of claude-gui, a lightweight browser for Claude Code sessions, with sample data.">',
+      '  <meta name="description" content="Live demo of claude-gui, a lightweight browser for Claude Code, Codex and Antigravity sessions, with real sample sessions.">',
       '  <!-- Google tag (gtag.js); only reports from the live site, so local dev doesn\'t pollute analytics -->',
       '  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HK7FW9Y6N"></script>',
       '  <script>',
