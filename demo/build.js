@@ -127,9 +127,14 @@ async function snapshot(appDir, home) {
 
     // Exactly the sample sessions, or something else answered on this port.
     const projectsDir = path.join(home, '.claude', 'projects');
-    const expected = fs.readdirSync(projectsDir)
-      .flatMap(dir => fs.readdirSync(path.join(projectsDir, dir)).filter(f => f.endsWith('.jsonl')).map(f => path.basename(f, '.jsonl')))
-      .sort();
+    const claudeIds = fs.readdirSync(projectsDir)
+      .flatMap(dir => fs.readdirSync(path.join(projectsDir, dir)).filter(f => f.endsWith('.jsonl')).map(f => path.basename(f, '.jsonl')));
+    const codexDir = path.join(home, '.codex', 'sessions');
+    const codexIds = fs.existsSync(codexDir)
+      ? fs.readdirSync(codexDir, { recursive: true }).filter(f => f.endsWith('.jsonl'))
+        .map(f => readLines(path.join(codexDir, f)).find(d => d.type === 'session_meta').payload.id)
+      : [];
+    const expected = [...claudeIds, ...codexIds].sort();
     const got = sessions.map(s => s.id).sort();
     if (!expected.length || JSON.stringify(got) !== JSON.stringify(expected)) {
       throw new Error(`expected sessions ${expected.join(', ') || '(none in demo/home)'}, got ${got.join(', ') || 'none'}`);
@@ -137,7 +142,7 @@ async function snapshot(appDir, home) {
 
     const data = { sessions, messages: {}, projectIndex: {}, memoryFiles: {}, pluginSkills: {} };
     for (const s of sessions) data.messages[s.id] = await get(`/api/sessions/${s.id}/messages?provider=${s.provider}`);
-    for (const dir of new Set(sessions.map(s => s.projectDir))) {
+    for (const dir of new Set(sessions.filter(s => s.provider === 'claude').map(s => s.projectDir))) {
       data.projectIndex[dir] = (await get(`/api/project-index?project=${encodeURIComponent(dir)}`)).entries;
     }
     data.settings = await get('/api/settings');

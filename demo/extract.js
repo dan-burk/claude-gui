@@ -1,43 +1,66 @@
 #!/usr/bin/env node
 'use strict';
 
-// Copies the opening of a real Claude Code session into the demo's sample home
-// (demo/home/.claude/projects/<project>/<id>.jsonl), in Claude Code's own
-// format. Run by hand when changing the samples; the build never touches your
-// real ~/.claude.
+// Copies the opening of a real Claude Code or Codex session into the demo's
+// sample home (demo/home), in that tool's own format. Run by hand when
+// changing the samples; the build never touches your real ~/.claude or ~/.codex.
 //
 //   node demo/extract.js <session.jsonl> <prompts>
 //
 // Keeps everything up to the reply to the <prompts>-th thing you typed, and
 // trims what a visitor doesn't need to see: harness-injected messages and
-// <system-reminder> blocks, thinking, subagent traffic, bookkeeping lines, and
-// the bulk of long tool output.
+// instructions, thinking/reasoning, subagent traffic, bookkeeping lines, and
+// the bulk of long tool output. Your OS username is replaced with "demo"
+// everywhere, paths and project folder names included.
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const MAX_RESULT_CHARS = 2000;
 const MAX_INPUT_CHARS = 2000;
-const KEEP_FIELDS = ['parentUuid', 'isSidechain', 'userType', 'cwd', 'sessionId', 'version', 'gitBranch', 'type', 'subtype', 'content', 'message', 'uuid', 'timestamp'];
+const USERNAME = os.userInfo().username;
+const ALIAS = 'demo';
 
 const [file, count] = process.argv.slice(2);
 if (!file || !(Number(count) > 0)) {
   console.error('usage: node demo/extract.js <session.jsonl> <prompts>');
   process.exit(1);
 }
+const limit = Number(count);
 
 const trim = (text, max) => text.length <= max ? text : `${text.slice(0, max)}\n…[trimmed for the demo]`;
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Also any Linux account the session ran under (WSL, containers): its home
+// folder and its name as file owner and group in `ls -l` output.
+function anonymize(text) {
+  let out = USERNAME ? text.replace(new RegExp(escapeRe(USERNAME), 'gi'), ALIAS) : text;
+  const accounts = new Set([...out.matchAll(/\/home\/([a-z_][a-z0-9_-]*)/g)].map(m => m[1]).filter(n => n !== ALIAS));
+  for (const name of accounts) {
+    const n = escapeRe(name);
+    out = out
+      .replace(new RegExp(`/home/${n}\\b`, 'g'), `/home/${ALIAS}`)
+      .replace(new RegExp(`-home-${n}-`, 'g'), `-home-${ALIAS}-`)
+      .replace(new RegExp(`(\\d+ )${n} ${n}( +\\d)`, 'g'), `$1${ALIAS} ${ALIAS}$2`);
+  }
+  return out;
+}
+const lines = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean)
+  .map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+
+// ── Claude Code (~/.claude/projects/<project>/<id>.jsonl) ────────────
+const CLAUDE_FIELDS = ['parentUuid', 'isSidechain', 'userType', 'cwd', 'sessionId', 'version', 'gitBranch', 'type', 'subtype', 'content', 'message', 'uuid', 'timestamp'];
 const stripReminders = (text) => text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '').trim();
 
 // Something the person typed, as opposed to a tool result or harness text.
-function isPrompt(d) {
+function isClaudePrompt(d) {
   if (d.type !== 'user' || d.isMeta || !d.message) return false;
   const c = d.message.content;
   const text = typeof c === 'string' ? c : (c || []).filter(p => p.type === 'text').map(p => p.text).join('');
   return !!stripReminders(text) && !text.trimStart().startsWith('<');
 }
 
-function cleanContent(content) {
+function cleanClaudeContent(content) {
   if (typeof content === 'string') return stripReminders(content);
   return content.flatMap(p => {
     if (p.type === 'text') { const text = stripReminders(p.text); return text ? [{ ...p, text }] : []; }
@@ -54,35 +77,79 @@ function cleanContent(content) {
   });
 }
 
-const lines = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean)
-  .map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
-
-const out = [];
-let prompts = 0;
-for (const d of lines) {
-  if (d.isSidechain) continue;
-  if (isPrompt(d) && ++prompts > Number(count)) break;
-  // A user line is either a prompt or tool results; anything else is the
-  // harness talking (<task-notification>, <command-name>, …).
-  const toolResults = d.type === 'user' && Array.isArray(d.message?.content) && d.message.content.some(p => p.type === 'tool_result');
-  const keep = (d.type === 'user' && (isPrompt(d) || toolResults)) || d.type === 'assistant' || (d.type === 'system' && d.subtype === 'away_summary');
-  if (!keep) continue;
-  const entry = Object.fromEntries(KEEP_FIELDS.filter(k => k in d).map(k => [k, d[k]]));
-  if (entry.message) {
-    const content = cleanContent(entry.message.content || '');
-    if (!content.length) continue;
-    const { role, content: _, model, usage, id } = entry.message;
-    entry.message = { role, content, ...(id ? { id } : {}), ...(model ? { model } : {}), ...(usage ? { usage } : {}) };
+function extractClaude() {
+  const out = [];
+  let prompts = 0;
+  for (const d of lines) {
+    if (d.isSidechain) continue;
+    if (isClaudePrompt(d) && ++prompts > limit) break;
+    // A user line is either a prompt or tool results; anything else is the
+    // harness talking (<task-notification>, <command-name>, …).
+    const toolResults = d.type === 'user' && Array.isArray(d.message?.content) && d.message.content.some(p => p.type === 'tool_result');
+    const keep = (d.type === 'user' && (isClaudePrompt(d) || toolResults)) || d.type === 'assistant' || (d.type === 'system' && d.subtype === 'away_summary');
+    if (!keep) continue;
+    const entry = Object.fromEntries(CLAUDE_FIELDS.filter(k => k in d).map(k => [k, d[k]]));
+    if (entry.message) {
+      const content = cleanClaudeContent(entry.message.content || '');
+      if (!content.length) continue;
+      const { role, model, usage, id } = entry.message;
+      entry.message = { role, content, ...(id ? { id } : {}), ...(model ? { model } : {}), ...(usage ? { usage } : {}) };
+    }
+    out.push(entry);
   }
-  out.push(entry);
-}
-// Claude Code's own title for the full session.
-const title = lines.filter(d => d.type === 'ai-title' && d.aiTitle).pop();
-if (title) out.push({ type: 'ai-title', aiTitle: title.aiTitle, sessionId: title.sessionId });
+  // Claude Code's own title for the full session.
+  const title = lines.filter(d => d.type === 'ai-title' && d.aiTitle).pop();
+  if (title) out.push({ type: 'ai-title', aiTitle: title.aiTitle, sessionId: title.sessionId });
 
-const id = path.basename(file, '.jsonl');
-const project = path.basename(path.dirname(file));
-const dest = path.join(__dirname, 'home', '.claude', 'projects', project, `${id}.jsonl`);
+  const project = path.basename(path.dirname(file));
+  return { out, prompts, dest: path.join('.claude', 'projects', project, path.basename(file)) };
+}
+
+// ── Codex (~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl) ────────────
+// The same markers codex-sessions.js uses to hide injected context.
+const CODEX_INJECTED = ['<environment_context>', '<permissions instructions>', '<user_instructions>', '<apps_instructions>', '<plugins_instructions>', '<skills_instructions>', '# AGENTS.md instructions'];
+const codexText = (content) => (content || []).map(c => c.text || '').join('');
+const isInjected = (text) => CODEX_INJECTED.some(m => text.trimStart().startsWith(m));
+
+function isCodexPrompt(d) {
+  const p = d.payload || {};
+  if (d.type === 'event_msg' && p.type === 'user_message') return true;
+  return d.type === 'response_item' && p.type === 'message' && p.role === 'user' && !isInjected(codexText(p.content));
+}
+
+function extractCodex() {
+  // A turn shows up both as an event_msg and as a response_item; count by
+  // whichever the file has, as the parser does.
+  const hasEvents = lines.some(d => d.type === 'event_msg' && d.payload?.type === 'user_message');
+  const countsAsPrompt = (d) => isCodexPrompt(d) && (hasEvents ? d.type === 'event_msg' : d.type === 'response_item');
+  const out = [];
+  let prompts = 0;
+  for (const d of lines) {
+    const p = d.payload || {};
+    if (countsAsPrompt(d) && ++prompts > limit) break;
+    if (d.type === 'session_meta') {
+      const { id, timestamp, cwd, originator, cli_version, source } = p;
+      out.push({ timestamp: d.timestamp, type: d.type, payload: { id, timestamp, cwd, originator, cli_version, source } });
+    } else if (d.type === 'turn_context') {
+      out.push({ timestamp: d.timestamp, type: d.type, payload: { cwd: p.cwd, model: p.model } });
+    } else if (d.type === 'event_msg' && ['user_message', 'agent_message', 'token_count'].includes(p.type)) {
+      out.push(d);
+    } else if (d.type === 'response_item' && p.type === 'message') {
+      if (p.role === 'assistant' || (p.role === 'user' && !isInjected(codexText(p.content)))) out.push(d);
+    } else if (d.type === 'response_item' && ['function_call', 'custom_tool_call'].includes(p.type)) {
+      const key = p.type === 'function_call' ? 'arguments' : 'input';
+      out.push({ ...d, payload: { ...p, [key]: typeof p[key] === 'string' ? trim(p[key], MAX_INPUT_CHARS) : p[key] } });
+    } else if (d.type === 'response_item' && ['function_call_output', 'custom_tool_call_output'].includes(p.type)) {
+      out.push({ ...d, payload: { ...p, output: typeof p.output === 'string' ? trim(p.output, MAX_RESULT_CHARS) : p.output } });
+    }
+  }
+  const day = path.dirname(file).split(/[\\/]/).slice(-3);   // YYYY, MM, DD
+  return { out, prompts, dest: path.join('.codex', 'sessions', ...day, path.basename(file)) };
+}
+
+const isCodex = lines.some(d => d.type === 'session_meta');
+const { out, prompts, dest: rel } = isCodex ? extractCodex() : extractClaude();
+const dest = path.join(__dirname, 'home', anonymize(rel));
 fs.mkdirSync(path.dirname(dest), { recursive: true });
-fs.writeFileSync(dest, out.map(l => JSON.stringify(l)).join('\n') + '\n');
-console.log(`${dest}: ${Math.min(prompts, Number(count))} prompts, ${out.length} lines, ${fs.statSync(dest).size} bytes`);
+fs.writeFileSync(dest, anonymize(out.map(l => JSON.stringify(l)).join('\n')) + '\n');
+console.log(`${dest}: ${Math.min(prompts, limit)} prompts, ${out.length} lines, ${fs.statSync(dest).size} bytes`);
