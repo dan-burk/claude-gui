@@ -108,6 +108,9 @@
     }
 
     html, body { height: 100%; overflow: hidden; }
+    /* Denser at 80% on desktop; the 100% heights follow the zoomed viewport,
+       so the app still fills the window. Phones stay at full size. */
+    @media (min-width: 900px) { html { zoom: 0.8; } }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
