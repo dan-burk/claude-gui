@@ -239,7 +239,10 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
+    // Shown at 80% on desktop so a visitor sees more of a session at once. The
+    // app's 100% heights follow the zoomed viewport, so it still fills the window.
     style.textContent = `
+      @media (min-width: 900px) { html { zoom: 0.8; } }
       .demo-badge { position: fixed; right: 16px; bottom: 16px; z-index: 1000; display: flex; align-items: center; gap: 10px;
         max-width: calc(100vw - 32px); padding: 8px 10px 8px 14px; border: 1px solid var(--border2); border-radius: 999px;
         background: var(--surface); color: var(--text2); font: 12px/1.3 system-ui, sans-serif; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
