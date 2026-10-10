@@ -1,0 +1,49 @@
+# Deploy the live demo to GitHub Pages (danielburkhalter.dev/claude-gui) on
+# every push to main. The tests run first; demo/build.js then starts the real
+# server against the sample sessions in demo/home and snapshots its answers
+# into a static site. Runs only on the dan-burk fork, so the workflow is inert
+# if it ever reaches upstream.
+name: Test and deploy demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.repository == 'dan-burk/claude-gui'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm test
+
+      - run: node demo/build.js _site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

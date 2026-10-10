@@ -12,6 +12,8 @@
 Browse, search, resume, and clean up your sessions in one local web page.<br>
 Session deletion uses the same two-click confirmation for every local provider.
 
+**[Try the live demo ↗](https://danielburkhalter.dev/claude-gui/)**
+
 </div>
 
 ## Install
@@ -61,6 +63,12 @@ To include hosted conversation history, extract the ZIP downloaded from ChatGPT 
 ## How it works
 
 One Node server, one HTML page. Claude Code, Codex, and Antigravity transcripts are read from their local JSONL files, while hosted ChatGPT and Claude conversations are read from each export's JSON files. Deleting a local session removes that provider's matching conversation artifacts; exported conversations are read-only. Memory files can be viewed, edited, and deleted for Claude Code or Codex, and installed plugins and non-system skills can be browsed in the existing Plugins view. Claude retention settings keep their existing behavior; pins and optional export paths are stored in the local `claude-gui-data.json` file.
+
+## Live demo
+
+[danielburkhalter.dev/claude-gui](https://danielburkhalter.dev/claude-gui/) runs the same page on GitHub Pages, deployed by `.github/workflows/deploy.yml` on every push to `main`. `demo/build.js` starts the real server against the sample data in `demo/home` (laid out like `~/.claude`) and saves its answers to `data.json`; `demo/demo-shim.js` answers the page's API calls from that file in the browser.
+
+To change the samples, copy the opening of a real session with `node demo/extract.js <session.jsonl> <prompts>`, then preview with `node demo/build.js` and serve `_site/` under any static server.
 
 ## Requirements
 
