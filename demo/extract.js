@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 
-// Copies the opening of a real Claude Code or Codex session into the demo's
-// sample home (demo/home), in that tool's own format. Run by hand when
-// changing the samples; the build never touches your real ~/.claude or ~/.codex.
+// Copies the opening of a real Claude Code, Codex or Antigravity session into
+// the demo's sample home (demo/home), in that tool's own format. Run by hand
+// when changing the samples; the build never touches your real ~/.claude,
+// ~/.codex or ~/.gemini.
 //
 //   node demo/extract.js <session.jsonl> <prompts>
 //
@@ -147,9 +148,51 @@ function extractCodex() {
   return { out, prompts, dest: path.join('.codex', 'sessions', ...day, path.basename(file)) };
 }
 
+// ── Antigravity (~/.gemini/antigravity-cli/brain/<id>/.system_generated/logs/transcript.jsonl)
+const AGY_FIELDS = ['step_index', 'source', 'type', 'status', 'created_at', 'content', 'tool_calls', 'input_tokens', 'cache_read_tokens', 'output_tokens'];
+const isAgyPrompt = (d) => d.type === 'USER_INPUT' && d.source === 'USER_EXPLICIT' && typeof d.content === 'string';
+
+function extractAntigravity() {
+  const out = [];
+  let prompts = 0;
+  for (const d of lines) {
+    if (isAgyPrompt(d) && ++prompts > limit) break;
+    const entry = Object.fromEntries(AGY_FIELDS.filter(k => k in d).map(k => [k, d[k]]));   // drops thinking
+    if (isAgyPrompt(d)) {
+      // Only what was typed; the metadata blocks around it are the harness.
+      const request = d.content.match(/<USER_REQUEST>[\s\S]*?<\/USER_REQUEST>/i);
+      if (request) entry.content = request[0];
+    } else if (typeof entry.content === 'string' && entry.type !== 'PLANNER_RESPONSE') {
+      entry.content = trim(entry.content, MAX_RESULT_CHARS);
+    }
+    out.push(entry);
+  }
+  // The folder a conversation ran in comes from cache/last_conversations.json,
+  // so the sample carries that mapping along.
+  const logs = path.dirname(file);
+  const id = path.basename(path.dirname(path.dirname(logs)));
+  const agyHome = path.resolve(logs, '..', '..', '..', '..');
+  let cwd = '';
+  try {
+    const last = JSON.parse(fs.readFileSync(path.join(agyHome, 'cache', 'last_conversations.json'), 'utf8'));
+    cwd = Object.keys(last).find(k => String(last[k]).toLowerCase() === id.toLowerCase()) || '';
+  } catch {}
+  return { out, prompts, id, cwd, dest: path.join('.gemini', 'antigravity-cli', 'brain', id, '.system_generated', 'logs', 'transcript.jsonl') };
+}
+
 const isCodex = lines.some(d => d.type === 'session_meta');
-const { out, prompts, dest: rel } = isCodex ? extractCodex() : extractClaude();
+const isAntigravity = lines.some(d => d.type === 'USER_INPUT' || d.type === 'PLANNER_RESPONSE');
+const result = isCodex ? extractCodex() : isAntigravity ? extractAntigravity() : extractClaude();
+const { out, prompts, dest: rel } = result;
 const dest = path.join(__dirname, 'home', anonymize(rel));
 fs.mkdirSync(path.dirname(dest), { recursive: true });
 fs.writeFileSync(dest, anonymize(out.map(l => JSON.stringify(l)).join('\n')) + '\n');
+if (isAntigravity && result.cwd) {
+  const lastPath = path.join(__dirname, 'home', '.gemini', 'antigravity-cli', 'cache', 'last_conversations.json');
+  let last = {};
+  try { last = JSON.parse(fs.readFileSync(lastPath, 'utf8')); } catch {}
+  last[anonymize(result.cwd)] = result.id;
+  fs.mkdirSync(path.dirname(lastPath), { recursive: true });
+  fs.writeFileSync(lastPath, `${JSON.stringify(last, null, 2)}\n`);
+}
 console.log(`${dest}: ${Math.min(prompts, limit)} prompts, ${out.length} lines, ${fs.statSync(dest).size} bytes`);

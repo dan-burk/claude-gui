@@ -134,7 +134,9 @@ async function snapshot(appDir, home) {
       ? fs.readdirSync(codexDir, { recursive: true }).filter(f => f.endsWith('.jsonl'))
         .map(f => readLines(path.join(codexDir, f)).find(d => d.type === 'session_meta').payload.id)
       : [];
-    const expected = [...claudeIds, ...codexIds].sort();
+    const brainDir = path.join(home, '.gemini', 'antigravity-cli', 'brain');
+    const antigravityIds = fs.existsSync(brainDir) ? fs.readdirSync(brainDir) : [];
+    const expected = [...claudeIds, ...codexIds, ...antigravityIds].sort();
     const got = sessions.map(s => s.id).sort();
     if (!expected.length || JSON.stringify(got) !== JSON.stringify(expected)) {
       throw new Error(`expected sessions ${expected.join(', ') || '(none in demo/home)'}, got ${got.join(', ') || 'none'}`);
