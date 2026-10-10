@@ -194,9 +194,21 @@ async function main() {
     const html = fs.readFileSync(path.join(ROOT, 'public', 'index.html'), 'utf8');
     const head = '<title>Agent Sessions</title>';
     if (!html.includes(head)) throw new Error(`public/index.html no longer contains ${head}`);
+    // Analytics are the demo's alone, shared with the rest of danielburkhalter.dev;
+    // the installed app never loads them.
     const page = html.replace(head, [
       '<title>Claude GUI demo</title>',
       '  <meta name="description" content="Live demo of claude-gui, a lightweight browser for Claude Code sessions, with sample data.">',
+      '  <!-- Google tag (gtag.js); only reports from the live site, so local dev doesn\'t pollute analytics -->',
+      '  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HK7FW9Y6N"></script>',
+      '  <script>',
+      '    window.dataLayer = window.dataLayer || [];',
+      '    function gtag(){dataLayer.push(arguments);}',
+      "    if (location.hostname === 'danielburkhalter.dev') {",
+      "      gtag('js', new Date());",
+      "      gtag('config', 'G-3HK7FW9Y6N');",
+      '    }',
+      '  </script>',
       '  <script src="demo-shim.js"></script>',
     ].join('\n'));
 
