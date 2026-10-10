@@ -1,0 +1,1 @@
+- [Data source: Macrotrends only](data-source-macrotrends.md) — no Yahoo; refresh CSVs by hand if runners get blocked

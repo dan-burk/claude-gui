@@ -39,12 +39,20 @@ function writeHome(home) {
 
   // A checkout dates every file to the clone, so put each session back at the
   // time it was last active; otherwise Organize treats them all as still open.
+  // Memory files take the project's latest session time.
   const projectsDir = path.join(home, '.claude', 'projects');
   for (const dir of fs.readdirSync(projectsDir)) {
+    let latest = null;
     for (const file of fs.readdirSync(path.join(projectsDir, dir)).filter(f => f.endsWith('.jsonl'))) {
       const fp = path.join(projectsDir, dir, file);
       const last = readLines(fp).map(d => d.timestamp).filter(Boolean).pop();
-      if (last) fs.utimesSync(fp, new Date(last), new Date(last));
+      if (!last) continue;
+      fs.utimesSync(fp, new Date(last), new Date(last));
+      if (!latest || new Date(last) > latest) latest = new Date(last);
+    }
+    const memDir = path.join(projectsDir, dir, 'memory');
+    if (latest && fs.existsSync(memDir)) {
+      for (const file of fs.readdirSync(memDir)) fs.utimesSync(path.join(memDir, file), latest, latest);
     }
   }
 
