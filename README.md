@@ -4,10 +4,12 @@
 
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/docs/Web/JavaScript)
-[![Zero dependencies](https://img.shields.io/badge/dependencies-0-22C55E?style=flat-square)](package.json)
+[![Zero dependencies](https://img.shields.io/badge/dependencies-0%2A-22C55E?style=flat-square)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-22C55E?style=flat-square)](LICENSE)
 
-**Lightweight GUI for Claude Code, Codex, Antigravity, and exported ChatGPT or Claude conversations. Zero dependencies.**
+**Lightweight GUI for Claude Code, Codex, Antigravity, and exported ChatGPT or Claude conversations. Zero dependencies\*.**<br>
+<sub>\* Zero dependencies unless you run the optional session embedding, which installs <code>@huggingface/transformers</code> and downloads a model from Hugging Face. Embedding runs locally.</sub>
+
 
 Browse, search, resume, and clean up your sessions in one local web page.<br>
 Session deletion uses the same two-click confirmation for every local provider.
