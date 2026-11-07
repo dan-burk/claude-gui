@@ -28,6 +28,7 @@ const {
   organizeProject,
   pruneProject,
 } = require('./organize');
+const embedService = require('./embeddings/service');
 
 // Default port differs per environment so a Windows instance and a WSL instance
 // can both run at once. WSL2 forwards localhost to Windows, so sharing a default
@@ -607,6 +608,44 @@ const server = http.createServer(async (req, res) => {
         if (i >= 0) out[s.key || s.id] = makeSnippet(s.searchText, i, q.length);
       }
       return jsonResponse(res, out);
+    } catch (e) { return jsonResponse(res, { error: e.message }, 500); }
+  }
+
+  // Semantic search: install/model/index state, and how many sessions a run would embed.
+  if (method === 'GET' && pathname === '/api/embed/status') {
+    try {
+      if (!cache) cache = await loadSessions();
+      return jsonResponse(res, await embedService.status(cache));
+    } catch (e) { return jsonResponse(res, { error: e.message }, 500); }
+  }
+
+  // Semantic search: build/update the local vector index. Streams NDJSON
+  // (install → download → embed → complete|error). The embedding itself runs
+  // in a child process; like /api/organize, it finishes if the client leaves.
+  if (method === 'POST' && pathname === '/api/embed') {
+    const reject = await embedService.preflight();
+    if (reject) return jsonResponse(res, { error: reject.error }, reject.status);
+    res.writeHead(200, { 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-cache' });
+    const send = (event) => { try { res.write(JSON.stringify(event) + '\n'); } catch {} };
+    const data = loadData();
+    await embedService.run({
+      getSessions: async () => (cache = await loadSessions()),
+      claudeProjectsDir: CLAUDE_PROJECTS,
+      exportPaths: { chatgpt: String(data.chatgptExportPath || '').trim(), claudeExport: String(data.claudeExportPath || '').trim() },
+      send,
+    });
+    return res.end();
+  }
+
+  // Semantic search: hybrid vector + keyword ranking, falling back to keyword
+  // only when no index/runtime is available. Sessions, not chunks, max 30.
+  if (method === 'GET' && pathname === '/api/semantic-search') {
+    try {
+      if (!cache) cache = await loadSessions();
+      const p = requestUrl.searchParams;
+      return jsonResponse(res, await embedService.search({
+        sessions: cache, q: p.get('q') || '', scope: p.get('scope') || 'all', project: p.get('project') || '', makeSnippet,
+      }));
     } catch (e) { return jsonResponse(res, { error: e.message }, 500); }
   }
 

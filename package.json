@@ -15,6 +15,7 @@
     "codex-sessions.js",
     "session-paths.js",
     "organize.js",
+    "embeddings/",
     "public/"
   ],
   "engines": {

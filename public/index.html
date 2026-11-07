@@ -975,6 +975,154 @@
     .save-status.ok { color: var(--green); }
     .save-status.err { color: var(--red); }
 
+    /* ── Find Sessions (empty-state search) ──────────── */
+    .v-empty.fs-host {
+      display: block; overflow-y: auto; overflow-x: hidden;
+      padding: 0 24px 40px; container-type: inline-size;
+    }
+    .fs-wrap {
+      max-width: 640px; margin: 0 auto;
+      padding-top: clamp(40px, 20vh, 180px);           /* optically centred while idle */
+      transition: padding-top 0.2s ease;
+    }
+    .fs-wrap.fs-active { padding-top: 28px; }        /* docks to top once there is a query */
+
+    .fs-box { position: relative; }
+    .fs-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text3); pointer-events: none; }
+    .fs-input {
+      width: 100%; height: 40px;
+      background: var(--surface); border: 1px solid var(--border2); border-radius: 8px;
+      color: var(--text1); font-size: 14px; padding: 0 64px 0 38px; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .fs-input::placeholder { color: var(--text3); }
+    .fs-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-lo); }
+    .fs-tail { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; }
+    .fs-spin {
+      width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    .fs-spin[hidden], .fs-clear[hidden] { display: none; }
+    .fs-clear {
+      background: none; border: none; color: var(--text3); cursor: pointer;
+      width: 22px; height: 22px; border-radius: 4px; font-size: 12px; line-height: 22px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .fs-clear:hover { color: var(--text1); background: var(--surface2); }
+
+    .fs-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .fs-scope .vt-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .fs-scope .vt-btn:disabled:hover { color: var(--text3); }
+    .fs-count { font-size: 10.5px; color: var(--text3); font-variant-numeric: tabular-nums; }
+
+    .fs-hint { margin-top: 8px; font-size: 11px; color: var(--text3); }
+    .fs-hint[hidden] { display: none; }
+    .fs-link {
+      background: none; border: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer;
+      text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 2px;
+      transition: text-decoration-color 0.15s;
+    }
+    .fs-link:hover { text-decoration-color: currentColor; }
+
+    .fs-results { margin-top: 14px; display: flex; flex-direction: column; gap: 2px; transition: opacity 0.15s; }
+    .fs-results.fs-stale { opacity: 0.55; }
+    .fs-item {
+      padding: 9px 12px; border-radius: 7px; border: 1px solid transparent;
+      cursor: pointer; transition: background 0.1s, border-color 0.1s;
+    }
+    .fs-item:hover { background: var(--surface); border-color: var(--border); }
+    .fs-item[aria-selected="true"] {
+      background: var(--sx-row-hover); border-color: var(--border2);
+      box-shadow: inset 2px 0 0 var(--accent);
+    }
+    .fs-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .fs-title {
+      flex: 1; min-width: 0; font-size: 13px; font-weight: 500; color: var(--text1);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .fs-title.untitled { color: var(--text3); font-style: italic; }
+    .fs-rel { display: flex; align-items: flex-end; gap: 2px; flex-shrink: 0; height: 10px; }
+    .fs-rel i { display: block; width: 3px; border-radius: 1px; background: var(--border2); }
+    .fs-rel i:nth-child(1) { height: 5px; } .fs-rel i:nth-child(2) { height: 7.5px; } .fs-rel i:nth-child(3) { height: 10px; }
+    .fs-rel i.on { background: var(--accent); }
+    .fs-meta { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 10.5px; color: var(--text3); min-width: 0; }
+    .fs-proj { color: var(--tool-dim); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .fs-date { white-space: nowrap; flex-shrink: 0; }
+    .fs-snip {
+      margin-top: 4px; font-size: 11.5px; color: var(--text2); line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      overflow-wrap: anywhere; word-break: break-word;
+    }
+    .fs-snip mark { background: var(--accent-lo); color: var(--accent-hi); border-radius: 2px; padding: 0 1px; font-weight: 600; }
+    .fs-role { font-size: 9.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); margin-right: 5px; }
+    .fs-keys { margin-top: 6px; text-align: right; font-size: 10px; color: var(--text3); opacity: 0.8; }
+    .fs-empty { padding: 28px 0; text-align: center; color: var(--text3); font-size: 12px; }
+    .fs-empty.fs-err { color: var(--red); }
+
+    .fs-clear:focus-visible, .fs-link:focus-visible, .fs-scope .vt-btn:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 1px;
+    }
+    @container (max-width: 520px) {
+      .fs-rel, .fs-keys { display: none; }
+      .fs-wrap { padding-top: 32px; }
+    }
+    @media (max-width: 900px) { .v-empty.fs-host { padding: 0 16px 32px; } }
+
+    /* ── Embed (semantic search setup) ───────────────── */
+    .emb-section { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 4px; margin-bottom: 0; }
+    .emb-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .emb-open { display: inline-flex; align-items: center; cursor: pointer; }
+    .emb-summary { font-size: 11px; color: var(--text3); }
+    .emb-summary.ok { color: var(--accent); }
+    .emb-summary.warn { color: var(--amber); }
+
+    .modal-overlay.emb-overlay { z-index: 210; background: rgba(0,0,0,0.35); }  /* stacks over Settings */
+    .modal.emb-modal { width: 400px; }
+    .emb-lead { font-size: 12px; color: var(--text2); }
+    .emb-checks { margin-top: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); }
+    .emb-check { display: flex; align-items: flex-start; gap: 9px; padding: 8px 11px; font-size: 12px; }
+    .emb-check + .emb-check { border-top: 1px solid var(--border); }
+    .emb-ic { width: 14px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .emb-ic.ok { color: var(--accent); } .emb-ic.bad { color: var(--red); } .emb-ic.idle { color: var(--text3); }
+    .emb-k { flex: 1; min-width: 0; color: var(--text2); line-height: 18px; }
+    .emb-v { font-family: var(--mono); font-size: 11px; color: var(--text1); white-space: nowrap; line-height: 18px; }
+    .emb-v.bad { color: var(--red); }
+    .emb-sub { font-size: 10.5px; color: var(--text3); line-height: 1.45; margin-top: 1px; }
+    .emb-note { margin-top: 10px; font-size: 11px; color: var(--amber); }
+
+    .emb-steps { display: flex; gap: 6px; margin-bottom: 12px; }
+    .emb-step {
+      flex: 1; padding-top: 6px; border-top: 2px solid var(--border);
+      font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3);
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .emb-step.active { color: var(--accent); border-top-color: var(--accent); font-weight: 600; }
+    .emb-step.done { color: var(--text2); border-top-color: var(--accent); opacity: 0.55; }
+    .emb-phase { font-size: 12.5px; color: var(--text1); font-variant-numeric: tabular-nums; }
+    .emb-detail {
+      font-family: var(--mono); font-size: 10.5px; color: var(--text3); min-height: 15px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .progress-fill.emb-indet { width: 35%; animation: emb-slide 1.1s ease-in-out infinite; }
+    @keyframes emb-slide { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+
+    .emb-done { display: flex; align-items: flex-start; gap: 10px; }
+    .emb-done-title { font-size: 13px; font-weight: 600; color: var(--text1); }
+    .emb-err {
+      background: var(--red-bg); color: var(--red); border: 1px solid var(--red); border-radius: 6px;
+      padding: 8px 10px; font-size: 11.5px; overflow-wrap: anywhere;
+    }
+    #emb-go:disabled:not([aria-busy]) { opacity: 0.4; cursor: not-allowed; }
+    #emb-modal .btn-save:focus-visible, #emb-modal .btn-cancel:focus-visible,
+    #emb-modal .btn-close:focus-visible, .emb-open:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fs-wrap { transition: none; }
+      .progress-fill.emb-indet { animation: none; width: 100%; opacity: 0.45; }
+    }
+
     /* ── Loading / state ──────────────────────────────── */
     .state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 16px; color: var(--text3); gap: 10px; font-size: 12px; }
     .spinner { width: 20px; height: 20px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
@@ -1050,7 +1198,7 @@
       <div class="sb-row2">
         <div class="search-wrap">
           <svg class="search-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input class="search" id="search" type="text" placeholder="Search chats…" autocomplete="off" spellcheck="false">
+          <input class="search" id="search" type="text" placeholder="Keyword search…" autocomplete="off" spellcheck="false">
         </div>
         <select class="sort" id="sort">
           <option value="lastTs">Last active</option>
@@ -1145,11 +1293,30 @@
                autocomplete="off" spellcheck="false">
         <div class="setting-hint">Extract the downloaded ZIP first. Leave blank to disable.</div>
       </div>
+      <div class="setting-row emb-section">
+        <span class="setting-label"><em>Semantic search</em></span>
+        <div class="emb-row">
+          <button type="button" class="btn-save emb-open" id="emb-open" aria-haspopup="dialog">Embed Sessions For Search</button>
+          <span class="emb-summary" id="emb-summary" aria-live="polite"></span>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <span class="save-status" id="save-status"></span>
       <button class="btn-save" id="save-settings">Save</button>
     </div>
+  </div>
+</div>
+
+<!-- ── Embed (semantic search) modal ─────────────────── -->
+<div class="modal-overlay emb-overlay" id="emb-modal" style="display:none">
+  <div class="modal emb-modal" role="dialog" aria-modal="true" aria-labelledby="emb-title">
+    <div class="modal-head">
+      <span id="emb-title">Embed sessions</span>
+      <button class="btn-close" id="emb-close" aria-label="Close">&#x2715;</button>
+    </div>
+    <div class="modal-body" id="emb-body"></div>
+    <div class="modal-footer" id="emb-footer"></div>
   </div>
 </div>
 
@@ -1759,7 +1926,7 @@ async function switchView(v) {
   document.getElementById('sort').style.display = isChats ? '' : 'none';
   document.querySelector('.sb-row3').style.display = isChats ? '' : 'none';
   document.getElementById('search').placeholder =
-    v === 'memory' ? 'Search project path…' : v === 'plugins' ? 'Search plugins…' : 'Search chats…';
+    v === 'memory' ? 'Search project path…' : v === 'plugins' ? 'Search plugins…' : 'Keyword search…';
   updateOrganizeButtonState();
   showEmpty();
   if (v === 'memory' && !memProjectsLoaded) {
@@ -1942,10 +2109,6 @@ const DEFAULT_EMPTY_HTML = `
   </svg>
   <span>Select a session to view its conversation</span>`;
 
-const SPARKLE_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px">
-  <path d="M9.5 2 11 6.5 15.5 8 11 9.5 9.5 14 8 9.5 3.5 8 8 6.5Z"/>
-  <path d="M18 13v4M16 15h4"/>
-</svg>`;
 
 // Hues available to arbitrary, project-invented context tags. Every hue used
 // semantically below is held out of this pool, so a context tag can never wear
@@ -2103,11 +2266,6 @@ function renderProjectIndex(entries, projectLabel, resolved) {
     </div>`;
 }
 
-const NO_INDEX_HTML = `
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4">
-    <path d="M9.5 2 11 6.5 15.5 8 11 9.5 9.5 14 8 9.5 3.5 8 8 6.5Z"/>
-  </svg>
-  <span>No sessions indexed yet — Run Organize to populate ${SPARKLE_SVG}</span>`;
 
 // Registered once at module scope — bindProjectIndexHandlers runs on every
 // project switch and would stack duplicate listeners here.
@@ -2176,7 +2334,7 @@ async function showEmpty() {
   const token = ++emptyRequestToken;
 
   const projectDir = view === 'chats' ? currentProjectDir() : '';
-  if (!projectDir) return setEmptyState('centered', DEFAULT_EMPTY_HTML);
+  if (!projectDir) return view === 'chats' ? renderFindSessions() : setEmptyState('centered', DEFAULT_EMPTY_HTML);
 
   const selected = allSessions.find(s => s.provider === 'claude' && s.projectDir === projectDir);
   const projectLabel = (selected && (selected.cwd || selected.projectDir)) || projectDir;
@@ -2185,12 +2343,12 @@ async function showEmpty() {
     const { entries, resolved, error } = await fetch(`/api/project-index?project=${encodeURIComponent(projectDir)}`).then(r => r.json());
     if (token !== emptyRequestToken) return;   // a newer project selection has since superseded this
     if (error) throw new Error(error);
-    if (!entries || !entries.length) return setEmptyState('centered', NO_INDEX_HTML);
+    if (!entries || !entries.length) return renderFindSessions();
     setEmptyState('index', renderProjectIndex(entries, projectLabel, resolved));
     bindProjectIndexHandlers();
   } catch {
     if (token !== emptyRequestToken) return;
-    setEmptyState('centered', DEFAULT_EMPTY_HTML);
+    renderFindSessions();
   }
 }
 
@@ -2200,9 +2358,253 @@ async function showEmpty() {
 // stylesheet says — which is exactly how the index once rendered sideways.
 function setEmptyState(mode, html) {
   const empty = document.getElementById('v-empty');
-  empty.className = mode === 'index' ? 'v-empty has-index' : 'v-empty';
-  empty.style.display = mode === 'index' ? 'block' : 'flex';
+  empty.className = mode === 'index' ? 'v-empty has-index' : mode === 'find' ? 'v-empty fs-host' : 'v-empty';
+  empty.style.display = mode === 'centered' ? 'flex' : 'block';
   empty.innerHTML = html;
+}
+
+// ── Find Sessions (chats empty state) ─────────────────────────────────
+// Replaces both the "Select a session…" and "No sessions indexed yet…" states
+// in the Chats view. State lives at module scope, so a query survives
+// openSession → back, project switches and list refreshes.
+const fsState = { q: '', scope: 'all', mode: null, results: null, sel: -1, loading: false, error: null, forKey: '' };
+let fsTimer = null, fsAbort = null, fsToken = 0;
+const FS_MIN_CHARS = 2, FS_DEBOUNCE_MS = 250, FS_MAX = 50;
+
+const fsQueryKey = () =>
+  fsState.q.trim() + '|' + (fsState.scope === 'project' ? 'project:' + projectFilter : 'all');
+
+function fsProjectName() {
+  return String(projectFilter || '').replace(/[\\/]+$/, '').split(/[\\/]/).pop() || projectFilter;
+}
+
+function renderFindSessions() {
+  if (fsState.scope === 'project' && !projectFilter) fsState.scope = 'all';
+  const projTitle = projectFilter ? `Only ${esc(fsProjectName())}` : 'Select a project first';
+  setEmptyState('find', `
+    <div class="fs-wrap" id="fs-wrap">
+      <div class="fs-box">
+        <svg class="fs-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input class="fs-input" id="fs-input" type="text" placeholder="Find Sessions" aria-label="Find sessions"
+               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="fs-results"
+               autocomplete="off" spellcheck="false">
+        <div class="fs-tail">
+          <span class="fs-spin" id="fs-spin" hidden aria-hidden="true"></span>
+          <button type="button" class="fs-clear" id="fs-clear" aria-label="Clear search" hidden>&#x2715;</button>
+        </div>
+      </div>
+      <div class="fs-controls">
+        <div class="view-toggle fs-scope" role="group" aria-label="Search scope">
+          <button type="button" class="vt-btn" data-scope="all" aria-pressed="true">All</button>
+          <button type="button" class="vt-btn" data-scope="project" aria-pressed="false" title="${projTitle}"${projectFilter ? '' : ' disabled'}>This project</button>
+        </div>
+        <span class="fs-count" id="fs-count" aria-live="polite"></span>
+      </div>
+      <div class="fs-hint" id="fs-hint" hidden>Keyword match only · <button type="button" class="fs-link" id="fs-enable">Enable semantic search</button></div>
+      <div class="fs-results" id="fs-results" role="listbox" aria-label="Matching sessions"></div>
+    </div>`);
+
+  const input = document.getElementById('fs-input');
+  input.value = fsState.q;
+  bindFindSessions();
+  if (fsState.q.trim().length >= FS_MIN_CHARS) {
+    if (fsState.results && fsState.forKey === fsQueryKey()) fsRenderResults();
+    else fsSearch();               // scope/project changed since the cached search
+  }
+  fsSyncChrome();
+  // Don't steal focus from the sidebar search or the project <select>.
+  const ae = document.activeElement;
+  if (!ae || ae === document.body || ae.closest('#v-empty')) input.focus({ preventScroll: true });
+}
+
+function bindFindSessions() {
+  const input = document.getElementById('fs-input');
+  input.addEventListener('input', () => {
+    fsState.q = input.value;
+    clearTimeout(fsTimer);
+    fsSyncChrome();
+    fsTimer = setTimeout(fsSearch, FS_DEBOUNCE_MS);
+  });
+  input.addEventListener('keydown', e => {
+    const n = fsState.results ? fsState.results.length : 0;
+    if (e.key === 'ArrowDown' && n) { e.preventDefault(); fsState.sel = (fsState.sel + 1) % n; fsApplySel(); }
+    else if (e.key === 'ArrowUp' && n) { e.preventDefault(); fsState.sel = (fsState.sel - 1 + n) % n; fsApplySel(); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      const fresh = !fsState.loading && fsState.forKey === fsQueryKey();
+      const hit = fresh && fsState.results && fsState.results[fsState.sel];
+      if (hit) openSession(hit.key); else fsSearch();   // Enter = search now, or open the highlighted row
+    } else if (e.key === 'Escape' && input.value) { e.preventDefault(); fsClear(); }
+  });
+  document.getElementById('fs-clear').addEventListener('click', () => { fsClear(); input.focus(); });
+  document.querySelectorAll('#v-empty .fs-scope .vt-btn').forEach(b => b.addEventListener('click', () => {
+    if (b.disabled || fsState.scope === b.dataset.scope) return;
+    fsState.scope = b.dataset.scope;
+    fsSyncChrome();
+    fsSearch();
+    input.focus();
+  }));
+  const list = document.getElementById('fs-results');
+  list.addEventListener('mousedown', e => { if (e.target.closest('.fs-item')) e.preventDefault(); }); // keep focus in the input
+  list.addEventListener('click', e => { const it = e.target.closest('.fs-item'); if (it) openSession(it.dataset.key); });
+  list.addEventListener('mousemove', e => {
+    const it = e.target.closest('.fs-item');
+    if (it && +it.dataset.i !== fsState.sel) { fsState.sel = +it.dataset.i; fsApplySel(false); }
+  });
+  document.getElementById('fs-enable').addEventListener('click', async () => { await openSettings(); openEmbModal(); });
+}
+
+function fsClear() {
+  clearTimeout(fsTimer);
+  if (fsAbort) fsAbort.abort();
+  fsToken++;
+  Object.assign(fsState, { q: '', mode: null, results: null, sel: -1, loading: false, error: null, forKey: '' });
+  const input = document.getElementById('fs-input');
+  if (input) input.value = '';
+  fsRenderResults();
+  fsSyncChrome();
+}
+
+async function fsSearch() {
+  clearTimeout(fsTimer);
+  if (fsAbort) fsAbort.abort();
+  const q = fsState.q.trim();
+  if (q.length < FS_MIN_CHARS) {
+    Object.assign(fsState, { results: null, mode: null, loading: false, error: null, sel: -1, forKey: '' });
+    fsRenderResults(); fsSyncChrome();
+    return;
+  }
+  const token = ++fsToken;
+  const key = fsQueryKey();
+  const ctrl = fsAbort = new AbortController();
+  fsState.loading = true; fsState.error = null;
+  fsSyncChrome();
+  try {
+    const params = new URLSearchParams({ q, scope: fsState.scope });
+    if (fsState.scope === 'project') params.set('project', projectFilter);
+    const resp = await fetch('/api/semantic-search?' + params, { signal: ctrl.signal });
+    let data = await resp.json().catch(() => ({}));
+    // Older server without semantic search: fall back to the keyword endpoint.
+    if (resp.status === 404) data = await fsKeywordFallback(q, ctrl.signal);
+    else if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+    if (token !== fsToken) return;
+    const known = new Set(allSessions.map(sessionKey));
+    fsState.mode = data.mode || 'keyword';
+    fsState.results = (data.results || []).filter(r => known.has(r.key)).slice(0, FS_MAX);
+    fsState.sel = fsState.results.length ? 0 : -1;   // top hit pre-selected: Enter opens it
+    fsState.forKey = key;
+  } catch (e) {
+    if (e.name === 'AbortError' || token !== fsToken) return;
+    fsState.error = e.message; fsState.results = null; fsState.forKey = key;
+  }
+  fsState.loading = false;
+  fsRenderResults();
+  fsSyncChrome();
+}
+
+// /api/search returns { <key>: <snippet> }; shape it like a semantic-search
+// response (keyword mode), applying the project scope client-side.
+async function fsKeywordFallback(q, signal) {
+  const r = await fetch('/api/search?q=' + encodeURIComponent(q), { signal });
+  const map = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(map.error || `HTTP ${r.status}`);
+  const byKey = new Map(allSessions.map(s => [sessionKey(s), s]));
+  const results = Object.entries(map)
+    .filter(([key]) => {
+      const s = byKey.get(key);
+      return s && (fsState.scope !== 'project' || (s.projectKey || s.projectDir) === projectFilter);
+    })
+    .map(([key, snippet]) => { const s = byKey.get(key); return { key, score: 1, snippet, timestamp: s.lastTs || s.firstTs }; })
+    .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+  return { mode: 'keyword', results };
+}
+
+function fsSyncChrome() {
+  const wrap = document.getElementById('fs-wrap');
+  if (!wrap) return;
+  const has = fsState.q.trim().length > 0;
+  wrap.classList.toggle('fs-active', has);
+  wrap.setAttribute('aria-busy', String(fsState.loading));
+  document.getElementById('fs-clear').hidden = !has;
+  document.getElementById('fs-spin').hidden = !fsState.loading;
+  document.querySelectorAll('#v-empty .fs-scope .vt-btn').forEach(b => {
+    const on = b.dataset.scope === fsState.scope;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+  document.getElementById('fs-hint').hidden = !(has && fsState.results && fsState.mode === 'keyword');
+  const stale = !!fsState.results && fsState.forKey !== fsQueryKey();
+  document.getElementById('fs-results').classList.toggle('fs-stale', stale || fsState.loading);
+}
+
+function fsRenderResults() {
+  const list = document.getElementById('fs-results');
+  if (!list) return;
+  const count = document.getElementById('fs-count');
+  const input = document.getElementById('fs-input');
+  const q = fsState.q.trim();
+  const byKey = new Map(allSessions.map(s => [sessionKey(s), s]));
+  const rows = (fsState.results || []).filter(r => byKey.has(r.key));
+  count.textContent = '';
+  input.setAttribute('aria-expanded', 'false');
+  input.removeAttribute('aria-activedescendant');
+
+  if (fsState.error) { list.innerHTML = `<div class="fs-empty fs-err" role="alert">Search failed: ${esc(fsState.error)}</div>`; return; }
+  if (!fsState.results || q.length < FS_MIN_CHARS) { list.innerHTML = ''; return; }
+  if (!rows.length) { list.innerHTML = '<div class="fs-empty">No sessions match.</div>'; return; }
+
+  const top = Math.max(...rows.map(r => r.score || 0)) || 1;
+  list.innerHTML = rows.map((r, i) => fsRow(r, byKey.get(r.key), i, top, q)).join('')
+    + '<div class="fs-keys" aria-hidden="true">↑↓ select · ↵ open</div>';
+  count.textContent = `${rows.length} match${rows.length === 1 ? '' : 'es'}`;
+  input.setAttribute('aria-expanded', 'true');
+  if (fsState.sel >= rows.length) fsState.sel = rows.length - 1;
+  fsApplySel(false);
+}
+
+function fsRow(r, s, i, top, q) {
+  const title = s.title || 'Untitled session';
+  const provider = s.provider || 'claude';
+  const rel = (r.score || 0) / top;                 // relative to the best hit, so it works for both modes
+  const bars = rel >= 0.85 ? 3 : rel >= 0.6 ? 2 : 1;
+  const ts = r.timestamp || s.lastTs || s.firstTs;
+  const proj = (s.cwd || s.projectDir) ? projName(s) : '';
+  const role = r.role === 'user' ? 'You' : r.role === 'assistant' ? 'AI' : '';
+  const meta = [
+    proj ? `<span class="fs-proj" title="${esc(s.cwd || s.projectDir)}">${esc(proj)}</span>` : '',
+    ts ? `<span class="fs-date">${fmtFull(ts)}</span>` : '',
+  ].filter(Boolean).join('<span class="dot">·</span>');
+  return `
+    <div class="fs-item" id="fs-opt-${i}" role="option" aria-selected="false" data-key="${esc(r.key)}" data-i="${i}">
+      <div class="fs-top">
+        <span class="fs-title${s.title ? '' : ' untitled'}" title="${esc(title)}">${esc(title)}</span>
+        <span class="s-provider ${esc(provider)}">${esc(sessionProviderName(s))}</span>
+        <span class="fs-rel" title="Relevance" aria-hidden="true">${[1, 2, 3].map(n => `<i${n <= bars ? ' class="on"' : ''}></i>`).join('')}</span>
+      </div>
+      ${meta ? `<div class="fs-meta">${meta}</div>` : ''}
+      ${r.snippet ? `<div class="fs-snip">${role ? `<span class="fs-role">${role}</span>` : ''}${fsHighlight(r.snippet, q)}</div>` : ''}
+    </div>`;
+}
+
+// Escape each piece separately, so a <mark> can never wrap injected HTML.
+function fsHighlight(text, q) {
+  const terms = [...new Set(q.toLowerCase().split(/\s+/).filter(t => t.length >= 2))]
+    .sort((a, b) => b.length - a.length)
+    .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  if (!terms.length) return esc(text);
+  return String(text).split(new RegExp(`(${terms.join('|')})`, 'gi'))
+    .map((p, i) => i % 2 ? `<mark>${esc(p)}</mark>` : esc(p)).join('');
+}
+
+function fsApplySel(scroll = true) {
+  const input = document.getElementById('fs-input');
+  document.querySelectorAll('#fs-results .fs-item').forEach(el =>
+    el.setAttribute('aria-selected', String(+el.dataset.i === fsState.sel)));
+  const cur = document.getElementById('fs-opt-' + fsState.sel);
+  if (cur) {
+    input.setAttribute('aria-activedescendant', cur.id);
+    if (scroll) cur.scrollIntoView({ block: 'nearest' });
+  } else input.removeAttribute('aria-activedescendant');
 }
 
 // ── Organize / Prune ────────────────────────────────────────────────
@@ -2603,6 +3005,7 @@ function bindViewerHandlers() {}
 
 // ── Settings panel ───────────────────────────────────────────────────
 async function openSettings() {
+  refreshEmbSummary();
   document.getElementById('save-status').textContent = '';
   document.getElementById('save-status').className = 'save-status';
   const num = document.getElementById('cleanup-days');
@@ -2674,6 +3077,224 @@ async function saveSettings() {
     saveButton.removeAttribute('aria-busy');
     saveButton.innerHTML = originalButton;
   }
+}
+
+// ── Semantic search: embedding ────────────────────────────────────────
+// The modal DOM persists while hidden, so "Hide" during a run just closes it
+// and the stream keeps painting. Re-opening it mid-run shows live progress.
+const emb = { status: null, running: false, steps: {} };
+const EMB_ICONS = {
+  ok:   '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  bad:  '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  idle: '<svg width="12" height="12" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg>',
+};
+
+const fmtNum = n => Number(n || 0).toLocaleString();
+function fmtAgo(ts) {
+  if (!ts) return '';
+  const s = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  if (s < 86400 * 7) return `${Math.floor(s / 86400)}d ago`;
+  return fmtShortDate(ts);
+}
+function fmtSecs(sec) {
+  sec = Math.round(sec || 0);
+  return sec < 60 ? `${sec}s` : `${Math.floor(sec / 60)}m ${sec % 60}s`;
+}
+
+async function fetchEmbStatus() {
+  const r = await fetch('/api/embed/status');
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+  return (emb.status = d);
+}
+const embCanRun = st => !!(st.node && st.node.installed) && (!!st.runtimeInstalled || !!(st.npm && st.npm.installed));
+
+async function refreshEmbSummary() {
+  const el = document.getElementById('emb-summary');
+  if (!el) return;
+  if (emb.running) { el.textContent = 'Embedding…'; el.className = 'emb-summary'; return; }
+  try {
+    const st = await fetchEmbStatus();
+    if (st.running)      { el.textContent = 'Embedding…'; el.className = 'emb-summary'; }
+    else if (!st.index)  { el.textContent = 'Not set up'; el.className = 'emb-summary'; }
+    else if (st.pending) { el.textContent = `${fmtNum(st.pending)} pending`; el.className = 'emb-summary warn'; }
+    else                 { el.textContent = `✓ ${fmtNum(st.index.sessions)} sessions`; el.className = 'emb-summary ok'; }
+  } catch { el.textContent = ''; el.className = 'emb-summary'; }
+}
+
+async function openEmbModal() {
+  document.getElementById('emb-modal').style.display = 'flex';
+  if (emb.running) { document.getElementById('emb-hide')?.focus(); return; }
+  document.getElementById('emb-body').innerHTML = '<div class="state"><div class="spinner"></div>Checking…</div>';
+  document.getElementById('emb-footer').innerHTML = '';
+  try { renderEmbIdle(await fetchEmbStatus()); }
+  catch (e) { renderEmbError(e.message); }
+}
+
+function closeEmbModal() {
+  document.getElementById('emb-modal').style.display = 'none';
+  refreshEmbSummary();
+  if (document.getElementById('settings-modal').style.display !== 'none') document.getElementById('emb-open').focus();
+}
+
+function embCheckRow(state, k, v, sub = '', vTitle = '') {
+  return `
+    <div class="emb-check">
+      <span class="emb-ic ${state}" aria-hidden="true">${EMB_ICONS[state]}</span>
+      <div class="emb-k">${k}${sub ? `<div class="emb-sub">${sub}</div>` : ''}</div>
+      <span class="emb-v${state === 'bad' ? ' bad' : ''}"${vTitle ? ` title="${esc(vTitle)}"` : ''}>${v}</span>
+    </div>`;
+}
+
+function renderEmbIdle(st) {
+  const node = st.node || {}, npm = st.npm || {};
+  const can = embCanRun(st);
+  const upToDate = !!st.index && !st.pending;
+  const mb = st.modelSizeMB || 140;
+  const lead = 'Runs on your PC. Chats never leave it.';
+  const ix = st.index;
+  const ixSub = ix ? [
+    `${fmtNum(ix.chunks)} chunks`,
+    st.pending ? `${fmtNum(st.pending)} pending` : 'up to date',
+    ix.updatedAt ? fmtAgo(ix.updatedAt) : '',
+  ].filter(Boolean).join(' · ') : (st.pending ? `${fmtNum(st.pending)} sessions to embed` : '');
+
+  const rows = [
+    node.installed
+      ? embCheckRow('ok', 'Node.js', esc(node.version || ''))
+      : embCheckRow('bad', 'Node.js', 'Not found', '<a class="fs-link" href="https://nodejs.org" target="_blank" rel="noopener">Install Node.js</a> to enable.'),
+    node.installed && !st.runtimeInstalled && !npm.installed
+      ? embCheckRow('bad', 'npm', 'Not found', 'Reinstall Node.js with npm.') : '',
+    embCheckRow(st.runtimeInstalled ? 'ok' : 'idle', 'Dependency', st.runtimeInstalled ? 'Installed' : 'New',
+      st.runtimeInstalled ? '' : 'Installs @huggingface/transformers via npm.', '@huggingface/transformers'),
+    embCheckRow(st.modelDownloaded ? 'ok' : 'idle', 'Model', st.modelDownloaded ? 'Ready' : `${mb} MB`,
+      esc(st.model || '') + (st.modelDownloaded ? '' : '<br>One-time download from Hugging Face.')),
+    embCheckRow(ix ? (upToDate ? 'ok' : 'idle') : 'idle', 'Index', ix ? `${fmtNum(ix.sessions)} sessions` : 'Not built', ixSub),
+  ].join('');
+
+  document.getElementById('emb-body').innerHTML = `
+    <p class="emb-lead">${lead}</p>
+    <div class="emb-checks">${rows}</div>
+    ${st.running ? '<div class="emb-note">Already running in another window.</div>' : ''}`;
+
+  const label = !ix ? 'Embed' : st.pending ? `Embed ${fmtNum(st.pending)} new` : 'Up to date';
+  const disabled = !can || st.running || upToDate;
+  document.getElementById('emb-footer').innerHTML = `
+    <button class="btn-cancel" id="emb-cancel">Cancel</button>
+    <button class="btn-save" id="emb-go"${disabled ? ' disabled' : ''}${!can ? ' title="Requires Node.js"' : ''}>${label}</button>`;
+  document.getElementById('emb-cancel').addEventListener('click', closeEmbModal);
+  document.getElementById('emb-go').addEventListener('click', startEmbed);
+  document.getElementById(disabled ? 'emb-cancel' : 'emb-go').focus();
+}
+
+async function startEmbed() {
+  const st = emb.status || {};
+  emb.running = true;
+  emb.steps = { install: st.runtimeInstalled ? 'done' : 'todo', download: st.modelDownloaded ? 'done' : 'todo', embed: 'todo' };
+  document.getElementById('emb-body').innerHTML = `
+    <div class="emb-steps" aria-hidden="true">
+      <span class="emb-step" data-step="install">Install</span>
+      <span class="emb-step" data-step="download">Download</span>
+      <span class="emb-step" data-step="embed">Embed</span>
+    </div>
+    <div class="emb-phase" id="emb-phase" aria-live="polite">Starting…</div>
+    <div class="progress-track" id="emb-track" role="progressbar" aria-label="Embedding progress" aria-valuemin="0" aria-valuemax="100">
+      <div class="progress-fill emb-indet" id="emb-fill"></div>
+    </div>
+    <div class="emb-detail" id="emb-detail"></div>`;
+  document.getElementById('emb-footer').innerHTML = '<button class="btn-cancel" id="emb-hide">Hide</button>';
+  document.getElementById('emb-hide').addEventListener('click', closeEmbModal);
+  document.getElementById('emb-hide').focus();
+  embPaintSteps();
+  refreshEmbSummary();
+
+  try {
+    const resp = await fetch('/api/embed', { method: 'POST' });
+    if (resp.status === 409) throw new Error('Already running in another window.');
+    if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).error || `HTTP ${resp.status}`);
+    let finished = null;
+    await readNdjson(resp, evt => { if (evt.phase === 'complete') finished = evt; else embOnEvent(evt); });
+    if (!finished) throw new Error('Stopped before finishing.');
+    emb.running = false;
+    renderEmbDone(finished);
+  } catch (e) {
+    emb.running = false;
+    renderEmbError(e.message);
+  }
+  refreshEmbSummary();
+  // An open Find Sessions query may now be answerable in hybrid mode.
+  if (document.getElementById('fs-input') && fsState.q.trim().length >= FS_MIN_CHARS) fsSearch();
+}
+
+function embOnEvent(evt) {
+  if (evt.phase === 'error') throw new Error(evt.error || 'Embedding failed');
+  const phase = document.getElementById('emb-phase');
+  const fill = document.getElementById('emb-fill');
+  const track = document.getElementById('emb-track');
+  const detail = document.getElementById('emb-detail');
+  if (!phase) return;
+  const setPct = pct => {
+    fill.classList.remove('emb-indet');
+    fill.style.width = pct + '%';
+    track.setAttribute('aria-valuenow', String(pct));
+  };
+  if (evt.phase === 'install') {
+    embStep('install');
+    phase.textContent = 'Installing runtime…';
+    detail.textContent = evt.message || '';
+    fill.classList.add('emb-indet'); fill.style.width = '';
+    track.removeAttribute('aria-valuenow');
+  } else if (evt.phase === 'download') {
+    embStep('download');
+    const pct = Math.max(0, Math.min(100, Math.round(Number(evt.progress) || 0)));  // contract: 0–100
+    phase.textContent = `Downloading model · ${pct}%`;
+    detail.textContent = evt.file || '';
+    setPct(pct);
+  } else if (evt.phase === 'embed') {
+    embStep('embed');
+    const pct = evt.total ? Math.round((evt.done / evt.total) * 100) : 0;
+    phase.textContent = `Embedding · ${fmtNum(evt.done)} / ${fmtNum(evt.total)} sessions`;
+    detail.textContent = evt.chunks != null ? `${fmtNum(evt.chunks)} chunks` : '';
+    setPct(pct);
+  }
+}
+
+function embStep(name) {
+  const order = ['install', 'download', 'embed'];
+  const idx = order.indexOf(name);
+  order.forEach((s, i) => { if (i < idx) emb.steps[s] = 'done'; else if (i === idx) emb.steps[s] = 'active'; });
+  embPaintSteps();
+}
+function embPaintSteps() {
+  document.querySelectorAll('#emb-body .emb-step').forEach(el => {
+    el.className = 'emb-step ' + (emb.steps[el.dataset.step] || 'todo');
+  });
+}
+
+function renderEmbDone(evt) {
+  document.getElementById('emb-body').innerHTML = `
+    <div class="emb-done" role="status">
+      <span class="emb-ic ok" aria-hidden="true">${EMB_ICONS.ok}</span>
+      <div>
+        <div class="emb-done-title">Search is ready</div>
+        <div class="emb-sub">${fmtNum(evt.sessions)} sessions · ${fmtNum(evt.chunks)} chunks · ${fmtSecs(evt.seconds)}</div>
+      </div>
+    </div>`;
+  document.getElementById('emb-footer').innerHTML = '<button class="btn-save" id="emb-done-btn">Done</button>';
+  document.getElementById('emb-done-btn').addEventListener('click', closeEmbModal);
+  if (document.getElementById('emb-modal').style.display !== 'none') document.getElementById('emb-done-btn').focus();
+}
+
+function renderEmbError(msg) {
+  document.getElementById('emb-body').innerHTML = `<div class="emb-err" role="alert">${esc(msg)}</div>`;
+  document.getElementById('emb-footer').innerHTML = `
+    <button class="btn-cancel" id="emb-err-close">Close</button>
+    <button class="btn-save" id="emb-retry">Retry</button>`;
+  document.getElementById('emb-err-close').addEventListener('click', closeEmbModal);
+  document.getElementById('emb-retry').addEventListener('click', openEmbModal);   // re-checks status first
 }
 
 // ── Initialise ───────────────────────────────────────────────────────
@@ -2776,6 +3397,17 @@ document.getElementById('save-settings').addEventListener('click', saveSettings)
 document.getElementById('settings-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('settings-modal')) closeSettings();
 });
+document.getElementById('emb-open').addEventListener('click', openEmbModal);
+document.getElementById('emb-close').addEventListener('click', closeEmbModal);
+document.getElementById('emb-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('emb-modal')) closeEmbModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('emb-modal').style.display !== 'none') {
+    e.stopImmediatePropagation();
+    closeEmbModal();
+  }
+});
 
 async function init() {
   const [sessions, pinsData] = await Promise.all([
@@ -2787,6 +3419,7 @@ async function init() {
   renderProjectOptions();
   renderList();
   updateOrganizeButtonState();
+  showEmpty();
 }
 
 init().catch(e => {
